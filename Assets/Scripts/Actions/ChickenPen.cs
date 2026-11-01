@@ -89,9 +89,6 @@ public class ChickenPen : MonoBehaviour
             hudStyle.normal.textColor = Color.white;
         }
 
-        GUI.Label(new Rect(0, 10, Screen.width, 50), $"Ayam di kandang: {PennedCount}/{TotalCount}", hudStyle);
-        if (IsComplete)
-            GUI.Label(new Rect(0, 60, Screen.width, 50), "SEMUA AYAM MASUK KANDANG!", hudStyle);
     }
 
     // Klik kanan judul komponen > "Fit Zone X/Z To Renderer Bounds" untuk mencocokkan lebar zone dengan model kandang

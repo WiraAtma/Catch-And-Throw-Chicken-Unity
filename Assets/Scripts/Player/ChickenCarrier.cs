@@ -21,14 +21,10 @@ public class ChickenCarrier : MonoBehaviour
     [Tooltip("Sudut lemparan ke atas (derajat). 45 = paling jauh, 30-40 = seperti tendangan bola.")]
     [Range(5f, 80f)]
     [SerializeField] private float throwAngle = 40f;
-    [Tooltip("Seberapa besar kecepatan lari player ikut menambah lemparan.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float inheritVelocity = 0.4f;
 
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
-    private Rigidbody rb;
     private Transform cam;
     private Transform holdPoint;
     private ChickenWander carried;
@@ -38,8 +34,6 @@ public class ChickenCarrier : MonoBehaviour
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-
         var go = new GameObject("ChickenHoldPoint");
         holdPoint = go.transform;
         holdPoint.SetParent(transform, false);
@@ -95,10 +89,8 @@ public class ChickenCarrier : MonoBehaviour
 
         float rad = throwAngle * Mathf.Deg2Rad;
         Vector3 dir = forward * Mathf.Cos(rad) + Vector3.up * Mathf.Sin(rad);
+        // Jarak lemparan TETAP: tidak dipengaruhi kecepatan lari Player
         Vector3 velocity = dir * throwSpeed;
-
-        Vector3 playerVel = rb.linearVelocity; playerVel.y = 0f;
-        velocity += playerVel * inheritVelocity;
 
         carried.Throw(velocity);
         carried = null;

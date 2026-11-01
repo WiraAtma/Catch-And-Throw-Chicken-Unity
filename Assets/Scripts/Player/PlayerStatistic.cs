@@ -3,11 +3,12 @@ using UnityEngine;
 
 /// <summary>
 /// Statistik Player: poin ayam dan hitung mundur waktu.
-/// Pasang di Player. Semua nilai dipantau lewat variabel public di Inspector (tanpa HUD).
+/// Pasang di Player. Semua nilai dipantau lewat variabel public di Inspector.
+/// Game dimulai saat StartGame() dipanggil (oleh GameHUD setelah READY / GO!!).
 /// </summary>
 public class PlayerStatistic : MonoBehaviour
 {
-    public enum GameState { Playing, Won, TimeUp }
+    public enum GameState { Ready, Playing, Won, TimeUp }
 
     [Header("Referensi")]
     [Tooltip("Kosongkan untuk dicari otomatis di scene.")]
@@ -16,6 +17,8 @@ public class PlayerStatistic : MonoBehaviour
     [Header("Pengaturan")]
     [Tooltip("Batas waktu permainan (detik).")]
     [SerializeField] private float timeLimit = 120f;
+    [Tooltip("Aktifkan hanya jika scene TIDAK memakai GameHUD (tanpa READY / GO!!): game langsung mulai.")]
+    [SerializeField] private bool autoStart = false;
 
     [Header("Poin (dipantau di Inspector, jangan diedit manual)")]
     public int point;                // ayam yang sudah masuk kandang
@@ -29,8 +32,9 @@ public class PlayerStatistic : MonoBehaviour
     public string timeDisplay = "00:00"; // format mm:ss
 
     [Header("Status")]
-    public GameState state = GameState.Playing;
+    public GameState state = GameState.Ready;
 
+    public event Action OnGameStarted;
     public event Action<int, int> OnPointChanged;      // (point, totalChickens)
     public event Action<GameState> OnGameEnded;        // Won atau TimeUp
 
@@ -42,14 +46,17 @@ public class PlayerStatistic : MonoBehaviour
         UpdateTimeDisplay();
 
         if (pen == null) pen = FindFirstObjectByType<ChickenPen>();
-        if (pen == null)
+        if (pen != null)
+        {
+            pen.OnScoreChanged += HandleScoreChanged;
+            HandleScoreChanged(pen.PennedCount, pen.TotalCount); // sinkron nilai awal
+        }
+        else
         {
             Debug.LogWarning("PlayerStatistic: ChickenPen tidak ditemukan di scene.", this);
-            return;
         }
 
-        pen.OnScoreChanged += HandleScoreChanged;
-        HandleScoreChanged(pen.PennedCount, pen.TotalCount); // sinkron nilai awal
+        if (autoStart) StartGame();
     }
 
     private void OnDestroy()
@@ -59,7 +66,7 @@ public class PlayerStatistic : MonoBehaviour
 
     private void Update()
     {
-        if (state != GameState.Playing) return;
+        if (state != GameState.Playing) return; // waktu hanya jalan saat Playing
 
         timeRemaining = Mathf.Max(0f, timeRemaining - Time.deltaTime);
         UpdateTimeDisplay();
@@ -68,9 +75,17 @@ public class PlayerStatistic : MonoBehaviour
             EndGame(GameState.TimeUp);
     }
 
+    /// <summary>Mulai permainan: waktu mulai berjalan dan poin bisa menyelesaikan game.</summary>
+    public void StartGame()
+    {
+        if (state != GameState.Ready) return;
+        state = GameState.Playing;
+        OnGameStarted?.Invoke();
+    }
+
     private void HandleScoreChanged(int penned, int total)
     {
-        if (state != GameState.Playing) return; // setelah game selesai, statistik dibekukan
+        if (state == GameState.Won || state == GameState.TimeUp) return; // setelah game selesai, statistik dibekukan
 
         point = penned;
         totalChickens = total;
@@ -79,7 +94,7 @@ public class PlayerStatistic : MonoBehaviour
 
         OnPointChanged?.Invoke(point, totalChickens);
 
-        if (total > 0 && penned >= total)
+        if (state == GameState.Playing && total > 0 && penned >= total)
             EndGame(GameState.Won);
     }
 
@@ -89,7 +104,7 @@ public class PlayerStatistic : MonoBehaviour
         OnGameEnded?.Invoke(result);
     }
 
-    /// <summary>Mulai ulang waktu dan status. Poin disinkronkan lagi dari kandang.</summary>
+    /// <summary>Mulai ulang waktu dan status (langsung Playing). Poin disinkronkan lagi dari kandang.</summary>
     [ContextMenu("Reset Statistic")]
     public void ResetStatistic()
     {

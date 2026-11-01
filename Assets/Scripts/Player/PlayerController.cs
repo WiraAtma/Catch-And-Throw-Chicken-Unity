@@ -11,7 +11,7 @@ using UnityEngine.InputSystem; // New Input System
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float moveSpeed = 30f;
+    [SerializeField] private float moveSpeed = 15f;
     [SerializeField] private float groundAcceleration = 80f;  // makin besar = makin responsif
     [SerializeField] private float groundDeceleration = 100f; // makin besar = berhenti makin cepat (anti licin)
     [Range(0.1f, 1f)]
@@ -29,6 +29,10 @@ public class PlayerController : MonoBehaviour
     [Header("Ground")]
     [Range(0f, 1f)]
     [SerializeField] private float minGroundNormalY = 0.6f;   // 0.6 ≈ kemiringan maks ~53°
+
+    [Header("Input")]
+    [Tooltip("true = input gerak (WASD + Space) aktif. false = semua input gerak diblokir (READY/GO, End game, modal).")]
+    public bool isMoving = true;
 
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
@@ -84,6 +88,13 @@ public class PlayerController : MonoBehaviour
     {
         var kb = Keyboard.current;
         if (kb == null) return;
+
+        // Diblokir (READY/GO, End game, modal): semua input gerak diabaikan
+        if (!isMoving)
+        {
+            moveInput = Vector2.zero;
+            return;
+        }
 
         float x = (kb.dKey.isPressed ? 1f : 0f) - (kb.aKey.isPressed ? 1f : 0f);
         float y = (kb.wKey.isPressed ? 1f : 0f) - (kb.sKey.isPressed ? 1f : 0f);
@@ -167,11 +178,5 @@ public class PlayerController : MonoBehaviour
         if (grounded == usingGroundMat) return;
         usingGroundMat = grounded;
         capsule.sharedMaterial = grounded ? groundMat : airMat;
-    }
-
-    private void OnGUI()
-    {
-        if (!showDebug) return;
-        GUI.Label(new Rect(10, 10, 400, 25), $"Grounded: {isGrounded}");
     }
 }
