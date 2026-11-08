@@ -2449,6 +2449,11 @@ MonoBehaviour:
   jumpBufferTime: 0.1
   minGroundNormalY: 0.6
   isMoving: 1
+  jumpClip: {fileID: 8300000, guid: eb1bb9bf86e6f5a4b8b25de5c6647942, type: 3}
+  jumpVolume: 1
+  walkLoopClip: {fileID: 8300000, guid: 45c5ed326c0ca604799510c876a10a38, type: 3}
+  walkVolume: 0.6
+  walkSoundMinSpeed: 1
   showDebug: 1
 --- !u!54 &988324182
 Rigidbody:
@@ -2588,6 +2593,8 @@ MonoBehaviour:
   holdOffset: {x: 0, y: 1.5, z: 0}
   throwSpeed: 10
   throwAngle: 40
+  throwClip: {fileID: 8300000, guid: bdef0f0bc75a15f48afca9710186b223, type: 3}
+  throwVolume: 1
   showDebug: 1
 --- !u!114 &988324188
 MonoBehaviour:
@@ -2602,7 +2609,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStatistic
   pen: {fileID: 2001480841}
-  timeLimit: 10
+  timeLimit: 120
   autoStart: 0
   point: 0
   totalChickens: 0

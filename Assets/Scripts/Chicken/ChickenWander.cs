@@ -47,6 +47,18 @@ public class ChickenWander : MonoBehaviour
     [SerializeField] private float penPadding = 0.35f;  // ayam menjaga jarak ini dari tepi kandang
     [SerializeField] private float penLookAhead = 0.6f; // seberapa jauh ke depan ayam "mengintip" tepi kandang
 
+    [Header("Audio (drag clip di sini - pasang ChickenWander di PREFAB ayam)")]
+    [Tooltip("Kepakan sayap, dimainkan 1x saat ayam dilempar.")]
+    public AudioClip flapClip;
+    [Range(0f, 1f)] public float flapVolume = 1f;
+    [Tooltip("Suara jalan (loop mulus). Hanya berbunyi saat ayam berjalan, tidak saat diam/dibawa/dilempar.")]
+    public AudioClip walkLoopClip;
+    [Range(0f, 1f)] public float walkVolume = 0.5f;
+    [Tooltip("Jarak maksimum suara jalan masih terdengar (suara 3D, makin jauh makin pelan).")]
+    [SerializeField] private float walkMaxDistance = 15f;
+    [Tooltip("Pitch suara jalan saat panik (berlari lebih cepat).")]
+    [SerializeField] private float panicPitch = 1.3f;
+
     private Rigidbody rb;
     private State state = State.Wander;
     private Transform homeParent;
@@ -63,6 +75,7 @@ public class ChickenWander : MonoBehaviour
     private float panicTimer;
 
     private ChickenPen pen;
+    private AudioSource walkSource; // AudioSource lokal per ayam (3D), supaya tiap ayam punya loop sendiri
 
     /// <summary>Semua ayam yang aktif di scene (dipakai ChickenPen, tanpa perlu Find tiap frame).</summary>
     public static readonly List<ChickenWander> All = new List<ChickenWander>();
@@ -74,6 +87,10 @@ public class ChickenWander : MonoBehaviour
 
     /// <summary>Bisa diangkat / dihitung masuk kandang: sedang berkeliaran dan belum masuk kandang.</summary>
     public bool CanBePickedUp => state == State.Wander && pen == null;
+
+    // Ikut volume SFX & Master dari AudioHelper (kalau ada)
+    private static float SfxScale =>
+        AudioHelper.Instance != null ? AudioHelper.Instance.SFXVolume * AudioHelper.Instance.MasterVolume : 1f;
 
     private void OnEnable() => All.Add(this);
     private void OnDisable() => All.Remove(this);
@@ -102,11 +119,57 @@ public class ChickenWander : MonoBehaviour
         {
             Debug.LogWarning($"{name}: tidak ada Collider, ayam tidak akan bisa menabrak dinding.", this);
         }
+
+        SetupWalkAudio();
     }
 
     private void Start()
     {
         StartWalking(true);
+    }
+
+    private void Update()
+    {
+        UpdateWalkAudio();
+    }
+
+    // ---------------------------------------------------------------- Audio
+
+    private void SetupWalkAudio()
+    {
+        if (walkLoopClip == null) return;
+
+        walkSource = gameObject.AddComponent<AudioSource>();
+        walkSource.clip = walkLoopClip;
+        walkSource.loop = true;
+        walkSource.playOnAwake = false;
+        walkSource.spatialBlend = 1f; // 3D: makin jauh dari kamera makin pelan
+        walkSource.rolloffMode = AudioRolloffMode.Linear;
+        walkSource.minDistance = 1f;
+        walkSource.maxDistance = walkMaxDistance;
+    }
+
+    private void UpdateWalkAudio()
+    {
+        if (walkSource == null) return;
+
+        bool shouldPlay = state == State.Wander && !isIdle;
+
+        if (shouldPlay)
+        {
+            if (!walkSource.isPlaying)
+            {
+                // posisi awal acak supaya banyak ayam tidak berbunyi serempak
+                walkSource.time = Random.Range(0f, walkSource.clip.length * 0.99f);
+                walkSource.Play();
+            }
+            walkSource.pitch = panicTimer > 0f ? panicPitch : 1f;
+            walkSource.volume = walkVolume * SfxScale;
+        }
+        else if (walkSource.isPlaying)
+        {
+            walkSource.Stop();
+        }
     }
 
     // ---------------------------------------------------------------- API untuk ChickenCarrier
@@ -151,6 +214,10 @@ public class ChickenWander : MonoBehaviour
         panicTimer = 0f;
         WasThrown = true;
         state = State.Thrown;
+
+        // Audio: kepak sayap 1x saat dilempar
+        if (AudioHelper.Instance != null)
+            AudioHelper.Instance.PlaySFX(flapClip, flapVolume);
     }
 
     /// <summary>Dipanggil ChickenPen saat ayam sudah resmi masuk kandang. Ayam tidak bisa diangkat lagi dan tetap di dalam.</summary>

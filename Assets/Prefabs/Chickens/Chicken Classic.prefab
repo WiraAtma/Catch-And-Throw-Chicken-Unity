@@ -153,6 +153,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f1c9470a57ca31448e739081545bf73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChickenWander
+  mass: 1000
+  thrownMass: 1
   speedRange: {x: 3, y: 6}
   acceleration: 20
   turnSpeed: 360
@@ -162,3 +164,17 @@ MonoBehaviour:
   wallTurnMaxAngle: 70
   wallNormalMaxY: 0.5
   turnCooldown: 0.25
+  landingFriction: 15
+  recoverSpeed: 0.5
+  maxThrownTime: 6
+  dazedTimeRange: {x: 0.5, y: 1.2}
+  panicDuration: 3
+  panicSpeedMultiplier: 2
+  penPadding: 0.35
+  penLookAhead: 0.6
+  flapClip: {fileID: 8300000, guid: ede94969fc69f7b449bd9ead73aea6db, type: 3}
+  flapVolume: 1
+  walkLoopClip: {fileID: 8300000, guid: cc8e079d816f354429c1d7f9ba2ec1a6, type: 3}
+  walkVolume: 0.5
+  walkMaxDistance: 15
+  panicPitch: 1.3

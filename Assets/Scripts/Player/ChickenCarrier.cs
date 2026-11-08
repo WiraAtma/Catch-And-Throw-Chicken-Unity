@@ -22,6 +22,11 @@ public class ChickenCarrier : MonoBehaviour
     [Range(5f, 80f)]
     [SerializeField] private float throwAngle = 40f;
 
+    [Header("Audio (drag clip di sini)")]
+    [Tooltip("Dimainkan 1x setiap melempar ayam.")]
+    public AudioClip throwClip;
+    [Range(0f, 1f)] public float throwVolume = 1f;
+
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
@@ -94,6 +99,10 @@ public class ChickenCarrier : MonoBehaviour
 
         carried.Throw(velocity);
         carried = null;
+
+        // Audio: lempar 1x
+        if (AudioHelper.Instance != null)
+            AudioHelper.Instance.PlaySFX(throwClip, throwVolume);
     }
 
     private void OnGUI()

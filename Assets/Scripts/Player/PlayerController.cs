@@ -34,6 +34,16 @@ public class PlayerController : MonoBehaviour
     [Tooltip("true = input gerak (WASD + Space) aktif. false = semua input gerak diblokir (READY/GO, End game, modal).")]
     public bool isMoving = true;
 
+    [Header("Audio (drag clip di sini)")]
+    [Tooltip("Dimainkan 1x setiap lompat.")]
+    public AudioClip jumpClip;
+    [Range(0f, 1f)] public float jumpVolume = 1f;
+    [Tooltip("Clip yang bisa di-loop mulus. Berbunyi selama player berjalan di tanah.")]
+    public AudioClip walkLoopClip;
+    [Range(0f, 1f)] public float walkVolume = 0.6f;
+    [Tooltip("Kecepatan datar minimum (m/s) agar suara jalan dianggap aktif (mencegah bunyi saat mentok di dinding).")]
+    [SerializeField] private float walkSoundMinSpeed = 1f;
+
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
@@ -51,6 +61,7 @@ public class PlayerController : MonoBehaviour
     private float lastGroundedTime = -10f;
     private float lastJumpPressedTime = -10f;
     private float lastJumpTime = -10f;
+    private bool walkSoundOn;
 
     public bool IsGrounded => isGrounded;
 
@@ -82,6 +93,12 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         cam = Camera.main != null ? Camera.main.transform : transform;
+    }
+
+    private void OnDisable()
+    {
+        // AudioHelper bersifat DontDestroyOnLoad, jadi loop harus dimatikan manual
+        SetWalkSound(false);
     }
 
     private void Update()
@@ -121,6 +138,7 @@ public class PlayerController : MonoBehaviour
         // --- Horizontal ---
         Vector3 vel = rb.linearVelocity;
         Vector3 horizontal = new Vector3(vel.x, 0f, vel.z);
+        float actualFlatSpeed = horizontal.magnitude; // kecepatan nyata (sebelum diubah), untuk suara jalan
         float accel = hasInput
             ? (isGrounded ? groundAcceleration : airAcceleration)
             : (isGrounded ? groundDeceleration : airDeceleration);
@@ -142,12 +160,20 @@ public class PlayerController : MonoBehaviour
             lastJumpTime = Time.time;
             isGrounded = false;
             SetFriction(false);
+
+            // Audio: lompat 1x
+            if (AudioHelper.Instance != null)
+                AudioHelper.Instance.PlaySFX(jumpClip, jumpVolume);
         }
 
         if (vel.y < 0f)
             vel += Vector3.up * Physics.gravity.y * (fallGravityMultiplier - 1f) * Time.fixedDeltaTime;
 
         rb.linearVelocity = vel;
+
+        // --- Audio: jalan (loop) aktif hanya saat di tanah, ada input, dan benar-benar bergerak ---
+        bool walking = isGrounded && hasInput && actualFlatSpeed >= walkSoundMinSpeed;
+        SetWalkSound(walking);
 
         // --- Rotasi badan ---
         if (hasInput)
@@ -178,5 +204,16 @@ public class PlayerController : MonoBehaviour
         if (grounded == usingGroundMat) return;
         usingGroundMat = grounded;
         capsule.sharedMaterial = grounded ? groundMat : airMat;
+    }
+
+    private void SetWalkSound(bool on)
+    {
+        if (on == walkSoundOn) return;
+        walkSoundOn = on;
+
+        if (AudioHelper.Instance == null) return;
+
+        if (on) AudioHelper.Instance.PlayLoop(walkLoopClip, walkVolume, 0.05f);
+        else    AudioHelper.Instance.StopLoop(walkLoopClip, 0.1f);
     }
 }
