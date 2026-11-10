@@ -59,6 +59,8 @@ public class ChickenWander : MonoBehaviour
     [Tooltip("Pitch suara jalan saat panik (berlari lebih cepat).")]
     [SerializeField] private float panicPitch = 1.3f;
 
+    private ChickenAnimation anim;
+
     private Rigidbody rb;
     private State state = State.Wander;
     private Transform homeParent;
@@ -98,6 +100,7 @@ public class ChickenWander : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        anim = GetComponentInChildren<ChickenAnimation>(true);
         rb.mass = mass;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
@@ -131,6 +134,26 @@ public class ChickenWander : MonoBehaviour
     private void Update()
     {
         UpdateWalkAudio();
+        UpdateAnimation();
+    }
+
+    private void UpdateAnimation()
+    {
+        if (anim == null) return;
+
+        if (state == State.Carried || state == State.Thrown)
+        {
+            anim.Play(ChickenAnimation.Mode.Fly);          // dibawa / dilempar -> Fly
+        }
+        else if (isIdle)
+        {
+            anim.Play(ChickenAnimation.Mode.Idle);         // berhenti -> pose berdiri
+        }
+        else
+        {
+            Vector3 v = rb.linearVelocity; v.y = 0f;
+            anim.Play(ChickenAnimation.Mode.Run, v.magnitude); // berjalan -> Run
+        }
     }
 
     // ---------------------------------------------------------------- Audio

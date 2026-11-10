@@ -27,6 +27,14 @@ public class ChickenCarrier : MonoBehaviour
     public AudioClip throwClip;
     [Range(0f, 1f)] public float throwVolume = 1f;
 
+    [Header("Catch Animation")]
+    [Tooltip("Tinggi ayam dari kaki player: di bawah nilai ini = Down.")]
+    [SerializeField] private float catchDownMaxHeight = 0.6f;
+    [Tooltip("Di bawah nilai ini = Mid, di atasnya = Up.")]
+    [SerializeField] private float catchMidMaxHeight = 1.4f;
+
+    public event System.Action<int> OnCatch; 
+
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
@@ -80,8 +88,14 @@ public class ChickenCarrier : MonoBehaviour
 
         if (best == null) return;
 
+        // Hitung tipe catch dari tinggi ayam relatif terhadap kaki player
+        float feetY = GetComponent<Collider>().bounds.min.y;
+        float rel = best.transform.position.y - feetY;
+        int type = rel < catchDownMaxHeight ? 0 : (rel < catchMidMaxHeight ? 1 : 2);
+
         best.PickUp(holdPoint);
         carried = best;
+        OnCatch?.Invoke(type);
     }
 
     private void ThrowChicken()
