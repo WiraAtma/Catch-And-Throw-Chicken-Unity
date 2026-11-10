@@ -7,4 +7,8 @@ public class LevelNavigation : MonoBehaviour
     {
         SceneManager.LoadScene("Level1");
     }
+    public void GoToLevel2()
+    {
+        SceneManager.LoadScene("Level2");
+    }
 }

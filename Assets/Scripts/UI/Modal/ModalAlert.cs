@@ -10,6 +10,10 @@ using UnityEngine.SceneManagement;
 public class ModalAlert : MonoBehaviour
 {
     private const int MaxStars = 3;
+    
+    [Header("Level")]
+    [Tooltip("ID level scene ini (1 atau 2). Dipakai sebagai kunci penyimpanan bintang.")]
+    [SerializeField] private int levelId = 1;
 
     [Header("Referensi (kosongkan untuk dicari otomatis)")]
     [SerializeField] private GameHUD hud;
@@ -63,6 +67,8 @@ public class ModalAlert : MonoBehaviour
     public void Show()
     {
         starCount = CalculateStars(statistic.point, statistic.totalChickens, out resultPercent);
+
+        SaveData.SaveScore(levelId, starCount);
 
         if (starText != null)
             starText.text = string.Format(starFormat, starCount, MaxStars);
